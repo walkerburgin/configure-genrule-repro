@@ -1,0 +1,41 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+
+genrule(
+    name = "gen-ab",
+    outs = [
+        "r1.ts",
+        "r2.d.ts",
+    ],
+    cmd = "\n".join([
+        "echo 'export const r1 = 1;' > $(location r1.ts)",
+        "echo 'export const r2: 2;' > $(location r2.d.ts)",
+    ]),
+)
+
+npm_link_all_packages(name = "node_modules")
+
+ts_project(
+    name = "typescript",
+    srcs = ["main.ts"],
+    declaration = True,
+    preserve_jsx = False,
+    tsconfig = ":tsconfig",
+    deps = [
+        ":r1.ts",
+        ":r2.d.ts",
+    ],
+)
+
+js_library(
+    name = "pkg",
+    srcs = ["package.json"],
+    visibility = ["//visibility:public"],
+    deps = [":typescript"],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+)
